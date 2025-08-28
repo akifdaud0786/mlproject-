@@ -43,46 +43,70 @@ class ModelTrainer:
                 "Decision Tree": DecisionTreeRegressor(),
                 "Gradient Boosting": GradientBoostingRegressor(),
                 "Linear Regression": LinearRegression(),
-                "K-Neighbors Regressor": KNeighborsRegressor(),
-                "XGB Regressor": XGBRegressor(),
+                "KNN": KNeighborsRegressor(),
+                "XGBRegressor": XGBRegressor(),
                 "CatBoost Regressor": CatBoostRegressor(verbose=False),
-                "AdaBoost Regressor": AdaBoostRegressor(),
+                "AdaBoost Regressor": AdaBoostRegressor()
             }
 
-            # Evaluate models
+            params = {
+                "Decision Tree": {
+                    'criterion': ['squared_error', 'friedman_mse', 'absolute_error', 'poisson'],
+                },
+                "Random Forest": {
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+                "Gradient Boosting": {
+                    'learning_rate': [.1, .01, .05, .001],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+                "Linear Regression": {},
+                "KNN": {
+                    'n_neighbors': [5, 7, 9, 11],
+                    'weights': ['uniform', 'distance'],
+                    'algorithm': ['ball_tree', 'kd_tree', 'brute']
+                },
+                "XGBRegressor": {
+                    'learning_rate': [.1, .01, .05, .001],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                },
+                "CatBoost Regressor": {
+                    'depth': [6, 8, 10],
+                    'learning_rate': [0.01, 0.05, 0.1],
+                    'iterations': [30, 50, 100]
+                },
+                "AdaBoost Regressor": {
+                    'learning_rate': [.1, .01, 0.5, .001],
+                    'n_estimators': [8, 16, 32, 64, 128, 256]
+                }
+            }
+
+            # ✅ Evaluate all models
             model_report: dict = evaluate_models(
-                X_train=X_train,
-                y_train=y_train,
-                X_test=X_test,
-                y_test=y_test,
-                models=models
+                X_train=X_train, y_train=y_train,
+                X_test=X_test, y_test=y_test,
+                models=models, params=params
             )
 
-            # Find best model
-            best_model_score = max(model_report.values())
-            best_model_name = list(model_report.keys())[
-                list(model_report.values()).index(best_model_score)
-            ]
+            print("\n========== MODEL REPORT ==========")
+            for model_name, r2 in model_report.items():
+                print(f"{model_name}: R2 Score = {r2}")
+            print("==================================\n")
+
+            # ✅ Select best model
+            best_model_name = max(model_report, key=model_report.get)
+            best_model_score = model_report[best_model_name]
             best_model = models[best_model_name]
 
-            if best_model_score < 0.6:
-                raise CustomException("No best model found")
-            logging.info(f"Best model found: {best_model_name} with score {best_model_score}")
+            print(f"✅ Best Model: {best_model_name} with R2 Score = {best_model_score}")
 
-            # Train best model on full training data before saving/predicting
-            best_model.fit(X_train, y_train)
-
-            # Save best model
+            # ✅ Save best model
             save_object(
                 file_path=self.model_trainer_config.trained_model_file_path,
                 obj=best_model
             )
 
-            # Predict and calculate final R2 score
-            predicted = best_model.predict(X_test)
-            best_r2 = r2_score(y_test, predicted)
-
-            return best_r2
+            return best_model_score
 
         except Exception as e:
             raise CustomException(e, sys)
