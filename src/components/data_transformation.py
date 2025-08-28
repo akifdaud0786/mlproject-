@@ -10,11 +10,12 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.exception import CustomException
 from src.logger import logging
-from src.utils import save_object   # <-- you need to create this utility
+from src.utils import save_object
 import os
 
 
-class DataTransformationConfig:
+@dataclass
+class DataTransformationConfig:   # ✅ should be a dataclass
     preprocessor_obj_file_path = os.path.join('artifacts', "preprocessor.pkl")
 
 
@@ -27,13 +28,12 @@ class DataTransformation:
         try:
             numerical_columns = ["writing_score", "reading_score"]
             categorical_columns = [
-            "gender",
-            "race_ethnicity",   # fixed spelling
-            "parental_level_of_education",
-            "lunch",
-            "test_preparation_course",
+                "gender",
+                "race_ethnicity",   # ✅ spelling corrected
+                "parental_level_of_education",
+                "lunch",
+                "test_preparation_course",
              ]
-
 
             num_pipeline = Pipeline(
                 steps=[
